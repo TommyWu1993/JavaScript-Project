@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Project</title>
+	<link rel="stylesheet" href="./index.css">
+	<!-- <script src="http://apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js"></script> -->
+</head>
+
+<body>
+	<!-- <button id = "loadInfo">loadInfo</button> -->
+	<div class="chooselist">
+		<div class="fn-clear">
+			<div class="fl reset">
+				Gender:
+				<input type="radio" name='male' value="0" checked>
+				<span class="allPerson">All</span>
+				<input type="radio" name='male' value="Male">
+				<span class="Male">Male</span>
+				<input type="radio" name='male' value="Female">
+				<span class="Female">Female</span>
+				&nbsp;&nbsp;&nbsp;&nbsp;
+			</div>
+			<br><br>
+			<div class="fl">Year of Birth:<input type="number" class="year1">-<input type="number"
+					class="year2">&nbsp;&nbsp;&nbsp;&nbsp;</div>
+			<br><br>
+			<div class="fl location reset" style="height: 40px;">
+				Location of Birth
+				<input type="radio" name="location" value="0" checked>
+				<span class="allLocation">All</span>
+				<input type="radio" name="location" value="NSW">
+				<span class="NSW">NSW</span>
+				<input type="radio" name="location" value="VIC">
+				<span class="VIC">VIC</span>
+				<input type="radio" name="location" value="QLD">
+				<span class="QLD">QLD</span>
+				<input type="radio" name="location" value="WA">
+				<span class="WA">WA</span>
+				<input type="radio" name="location" value="SA">
+				<span class="SA">SA</span>
+				<input type="radio" name="location" value="TAS">
+				<span class="TAS">TAS</span>
+				<input type="radio" name="location" value="ACT">
+				<span class="ACT">ACT</span>
+				<input type="radio" name="location" value="NT">
+				<span class="NT">NT</span>
+			</div>
+			<br><br>
+			<div class="fl reset first_c">
+				First Child in the Family:
+				<input type="radio" name='first' value="0" checked>
+				<span class="allfirst_c">All</span>
+				<input type="radio" name='first' value="Yes">
+				<span class="Yes">YES</span>
+				<input type="radio" name='first' value="No">
+				<span class="No">NO</span>
+				&nbsp;&nbsp;&nbsp;&nbsp;
+			</div>
+		</div>
+		<a href="JavaScript:;" id="choose">Filter</a>
+		<a href="JavaScript:;" id="restart">Reset</a>
+		<div class="fn-clear" id="status">
+			<h3>Result</h3>
+			<div class="sum fl">There are <i class="male"></i> males in the table</div>
+			<div class="sum fl">There are <i class="female"></i> females in the table</div>
+			<div class="fl sum">
+				There are <i class="people"></i>
+				 people who were born between
+				<i class="years1"></i>-
+				<i class="years2"></i>
+			</div>
+			<div class="sum fl">
+				There are <i class="sumnumber"></i>
+				 people who were born in<i class="placechoose"></i>
+			</div>
+			<div class="sum fl"><i class="childfirst"></i> people are the first child in the family</div>
+		</div>
+	</div>
+	<div class="history" style="display: none;">
+		<h5>Searching history</h5>
+		<ul>
+		</ul>
+	</div>
+	<div id="grid1">
+		<ul class='fn-clear'>
+			<li class="fl">NO.</li>
+			<li class="fl">Full Name</li>
+			<li class="fl">Gender</li>
+			<li class="fl">Year of Birth</li>
+			<li class="fl">Location</li>
+			<li class="fl">First Child in the Family</li>
+		</ul>
+		<div class="list"></div>
+	</div>
+	<script>
+
+
+		let globalmyresult = null;
+		window.onload = function () {
+			let form = [];
+			fetch("9207Project2.txt")
+				.then(response => response.text())
+				.then(text => {
+					var text = text.replace(/[\r\n]/g, "");
+					var datas1 = text.replace(RegExp("Yes", "g"), 'Yes,');
+					var datas2 = datas1.replace(RegExp("No", "g"), 'No,');
+					var datas3 = datas2.split(',')
+					var myresult = [];
+					for (let i = 0; i < Math.ceil(datas3.length * 1 / 5) - 1; i++) {
+						myresult[i] = {};
+						myresult[i].name = datas3[i * 5];
+						myresult[i].gender = datas3[1 + i * 5];
+						myresult[i].year = datas3[i * 5 + 2];
+						myresult[i].locations = datas3[i * 5 + 3];
+						myresult[i].f_children = datas3[i * 5 + 4];
+					}
+					globalmyresult = myresult;
+					showHistory();
+					render(myresult);
+					if (localStorage.getItem('mydata') == undefined) {
+						dom(myresult);
+						Calculation(myresult);
+					} else {
+						let data = JSON.parse(localStorage.getItem('mydata'))
+						Array.from(document.querySelectorAll("input")).forEach(ele => {
+							if (ele.value == data.locations && ele.name == "location") {
+								ele.checked = true;
+							}
+						})
+						Array.from(document.querySelectorAll("input")).forEach(ele => {
+							if ((ele.name == "male" && ele.value == data.gender) || (ele.name == "first" && ele.value == data.first)) {
+								ele.checked = true;
+							}
+						})
+						data.yearstart == 0 ? '' : document.querySelector(".year1").value = data.yearstart;
+						data.yearend == 0 ? '' : document.querySelector(".year2").value = data.yearend;
+						let gender = Array.from(document.querySelectorAll("input")).filter(ele => {
+							if (ele.name == "male" && ele.checked) {
+								return true;
+							}
+						})[0].value;
+						let yearstart = document.querySelector('.year1').value | 0;
+						let yearend = document.querySelector('.year2').value | 0;
+						let locations = Array.from(document.querySelectorAll("input")).filter(ele => {
+							if (ele.name == "location" && ele.checked) {
+								return true;
+							}
+						})[0].value;
+						let first = Array.from(document.querySelectorAll("input")).filter(ele => ele.name == 'first' && ele.checked)[0].value;
+						choosedatail(myresult, gender, yearstart, yearend, locations, first)
+					}
+					document.getElementById("choose").onclick = function () {
+						let gender = Array.from(document.querySelectorAll("input")).filter(ele => {
+							if (ele.name == "male" && ele.checked) {
+								return true;
+							}
+						})[0].value;
+						let yearstart = document.querySelector('.year1').value | 0;
+						let yearend = document.querySelector('.year2').value | 0;
+						let locations = Array.from(document.querySelectorAll("input")).filter(ele => {
+							if (ele.name == "location" && ele.checked) {
+								return true;
+							}
+						})[0].value;
+						let first = Array.from(document.querySelectorAll("input")).filter(ele => ele.name == 'first' && ele.checked)[0].value;
+						choosedatail(myresult, gender, yearstart, yearend, locations, first)
+						var mydata = { 'gender': gender, 'yearstart': yearstart, 'yearend': yearend, 'locations': locations, 'first': first }
+						localStorage.setItem('mydata', JSON.stringify(mydata))
+						localStorageData(mydata);
+						showHistory();
+					}
+					document.getElementById("restart").onclick = function () {
+						Array.from(document.querySelectorAll("input")).forEach(ele => {
+							if (ele.checked && ele.name == "location") ele.innerText = "All";
+						})
+						Array.from(document.querySelectorAll(".reset")).forEach(ele => {
+							let children = Array.from(ele.children);
+							if (children[0].nodeName == "INPUT") { children[0].checked = true }
+							if (children[0].nodeName == "SELECT") {
+								Array.from(children[0].children)[0].selected = true;
+							}
+						})
+						document.querySelector(".year1").value = "";
+						document.querySelector(".year2").value = "";
+						localStorage.removeItem('mydata');
+						dom(myresult);
+						Calculation(myresult);
+						render(myresult);
+					}
+
+				});
+			function choosedatail(myresult, gender, yearstart, yearend, locations, first) {
+				var result = [];
+				/* Filter the Gender */
+				result = myresult.filter((value, key, arr) => {
+					if (gender == '0') {
+						return value
+					} else {
+						return value.gender == gender;
+					}
+				})
+				/* Filter the Year */
+				result = result.filter((value, key, arr) => {
+					if (yearstart == '0') {
+						return value
+					} else {
+						return value.year >= yearstart;
+					}
+				})
+
+				/* Filter the Year */
+				result = result.filter((value, key, arr) => {
+					if (yearend == '0') {
+						return value
+					} else {
+						return value.year <= yearend;
+					}
+				})
+				/* Filter the Location */
+				result = result.filter((value, key, arr) => {
+					if (locations == '0') {
+						return value
+					} else {
+						return value.locations == locations;
+					}
+				})
+				/* Filter the First Child */
+				result = result.filter((value, key, arr) => {
+					if (first == '0') {
+						return value
+					} else {
+						return value.f_children == first;
+					}
+				})
+				dom(result);
+				Calculation(result);
+				render(result);
+			}
+			function dom(myresult) {
+				let form = myresult;
+				let mytest = '';
+				myresult.forEach((value, index, myresult) => {
+					mytest += `<ul class='fn-clear'>
+										<li class='fl'>${index + 1}</li>
+										<li class='fl'>${value.name}</li>
+										<li class='fl'>${value.gender}</li>
+										<li class='fl'>${value.year}</li>
+										<li class='fl'>${value.locations}</li>
+										<li class='fl'>${value.f_children}</li>
+									</ul>`
+				})
+				document.querySelector('.list').innerHTML = mytest;
+			}
+			function Calculation(myresult) {
+				/* Male */
+				male = myresult.filter((value) => {
+					return value.gender == 'Male'
+				})
+				document.querySelector(".male").innerText = male.length;
+				/* Female */
+				female = myresult.filter((value) => {
+					return value.gender == 'Female'
+				})
+				document.querySelector(".female").innerText = female.length;
+				/* First Child */
+				childfirst = myresult.filter((value) => {
+					return value.f_children == 'Yes'
+				})
+				/* First Child */
+
+				document.querySelector(".childfirst").innerText = childfirst.length;
+				/* Year */
+				document.querySelector(".people").innerText = myresult.length;
+				document.querySelector(".years1").innerText = document.querySelector('.year1').value;
+				document.querySelector(".years2").innerText = document.querySelector('.year2').value;
+				/* Location */
+				let options = document.querySelectorAll("input");
+				options.forEach(ele => {
+					if (ele.checked && ele.name == "location" && ele.value != "0") {
+						document.querySelector(".sumnumber").innerText = myresult.length;
+						document.querySelector(".placechoose").innerText = ele.value;
+					}
+				})
+			}
+			let render = (result) => {
+				let M = 0;// Male
+				let F = 0;// Female
+				let Y = {};// Year
+				let L = {
+				};//Location
+				let F_C = {};// Whether the first child.
+				result.forEach(item => {
+					const { gender, f_children, locations, year, name } = item;
+					if (gender == "Male") {
+						M++;
+					}
+					if (gender == 'Female') {
+						F++;
+					}
+					if (F_C[f_children]) {
+						F_C[f_children]++;
+					} else {
+						F_C[f_children] = 1;
+					}
+					if (L[locations]) {
+						L[locations]++;
+					} else {
+						L[locations] = 1;
+					}
+					if (Y[year]) {
+						Y[year]++;
+					} else {
+						Y[year] = 1;
+					}
+				})
+				document.querySelector(".allPerson").innerText = `All (${M + F})` || 'All';
+				document.querySelector(".Male").innerText = `Male (${M})` || 'Male';
+				document.querySelector(".Female").innerText = `Female (${F})` || 'Female';
+				console.log(L);
+				for (let prop in L) {
+					if (Object.keys(L).length == 1) {
+						let dom = document.querySelector(`.${prop}`).innerText = `${prop} (${L[prop]})` || "";
+						let doms = document.querySelector('.location').children;
+						Array.from(doms).forEach(ele => {
+							if (ele.nodeName == "SPAN" && ele.className != prop) {
+								ele.innerText = ele.className + "(0)";
+							}
+							if (ele.className == "allLocation") {
+								ele.innerText = "All";
+							}
+						})
+
+					} else {
+						let dom = document.querySelector(`.${prop}`).innerText = `${prop} (${L[prop]})` || "";
+					}
+				}
+				for (let prop in F_C) {
+					if (Object.keys(F_C).length == 1) {
+						let dom = document.querySelector(`.${prop}`).innerText = `${(prop == "Yes" ? "YES" : "NO")} (${F_C[prop]})` || (prop == "Yes" ? "YES" : "NO");
+						let doms = document.querySelector('.first_c').children;
+						Array.from(doms).forEach(ele => {
+							if (ele.nodeName == "SPAN" && ele.className != prop) {
+								ele.innerText = ele.className + "(0)";
+							}
+							if (ele.className == "allfirst_c") {
+								ele.innerText = "All";
+							}
+						})
+
+					} else {
+						let dom = document.querySelector(`.${prop}`).innerText = `${(prop == "Yes" ? "YES" : "NO")} (${F_C[prop]})` || (prop == "Yes" ? "YES" : "NO");
+					}
+				}
+			}
+			function showHistory() {
+				let data = JSON.parse(localStorage.getItem("localStorageData"));
+				if (data) {
+					let str = ``;
+					data.forEach((item, index) => {
+						// item: stored data 
+						str += `<li>
+						<button data-id=${index}>Searching History ${index+1}</button>
+					</li>`;
+					})
+					str += `<li><button data-clear=1>Clear All the Searching History</button></li>`;
+					document.querySelector(".history ul").innerHTML = str;
+					let li = document.querySelectorAll(".history ul li");
+					li.forEach(ele => {
+						ele.onclick = function (e) {
+							let id = e.target.dataset.id;
+							let clear = e.target.dataset.clear;
+							if (id) {
+								let data = JSON.parse(localStorage.getItem("localStorageData"));
+								let result = data[id];
+								let { gender, yearstart, yearend, locations, first } = result;
+								choosedatail(globalmyresult, gender, yearstart, yearend, locations, first)
+							} else if (clear == 1) {
+								console.log(clear);
+								localStorage.removeItem("localStorageData");
+								document.querySelector(".history")
+								document.querySelector(".history").style.display = 'none';
+							}
+						}
+					})
+					document.querySelector(".history").style.display = 'block';
+				} else {
+					document.querySelector(".history").style.display = 'none';
+				}
+			}
+
+			function localStorageData(item) {
+				let name = "localStorageData";
+				let data = localStorage.getItem(name);
+				if (data) {
+					let parse = JSON.parse(data);
+					if (parse.length < 5) {
+						let newData = parse.push(item);
+						localStorage.setItem(name, JSON.stringify(parse));
+					}
+				} else {
+					localStorage.setItem(name, JSON.stringify([item]));
+				}
+			}
+		}
+	</script>
+	</script>
+</body>
+</html>
